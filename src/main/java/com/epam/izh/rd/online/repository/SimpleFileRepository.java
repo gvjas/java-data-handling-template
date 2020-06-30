@@ -1,7 +1,19 @@
 package com.epam.izh.rd.online.repository;
 
-public class SimpleFileRepository implements FileRepository {
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Scanner;
 
+public class SimpleFileRepository implements FileRepository {
     /**
      * Метод рекурсивно подсчитывает количество файлов в директории
      *
@@ -10,7 +22,28 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public long countFilesInDirectory(String path) {
-        return 0;
+        long cnt = 0L;
+        File dir = new File("src\\main\\resources\\" + path);
+        File[] files = dir.listFiles();
+        for (File f : Objects.requireNonNull(files)) {
+            if (f.isDirectory()) {
+                cnt += countFilesInDirectory(path + "\\" + f.getName());
+            } else {
+                cnt++;
+            }
+        }
+        return cnt;
+//
+//        long c = 0L;
+//        try {
+//            c = Files.walk(Paths.get("src\\main\\resources\\" + path))
+//                    .filter(Files::isRegularFile)
+//                    .count();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return c;
+
     }
 
     /**
@@ -21,7 +54,15 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public long countDirsInDirectory(String path) {
-        return 0;
+        long cnt = 1L;
+        File dir = new File("src\\main\\resources\\" + path);
+        File[] files = dir.listFiles();
+        for (File f : Objects.requireNonNull(files)) {
+            if (f.isDirectory()) {
+                cnt += countDirsInDirectory(path + "\\" + f.getName());
+            }
+        }
+        return cnt;
     }
 
     /**
@@ -32,7 +73,17 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public void copyTXTFiles(String from, String to) {
-        return;
+        File dir = new File("src\\main\\resources\\" + from);
+        File dirC = new File("src\\main\\resources\\" + to);
+        for (File file : Objects.requireNonNull(dir.listFiles())) {
+            if (file.toString().endsWith(".txt")) {
+                try {
+                    Files.copy(dir.toPath(), dirC.toPath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     /**
@@ -44,7 +95,24 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public boolean createFile(String path, String name) {
-        return false;
+        try {
+            Path pathAbsolut = Paths.get(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
+            path = pathAbsolut.toString() + "\\" + path;
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        File dir = new File(path);
+        File file = new File(path + "\\" + name);
+
+        try {
+            dir.mkdir();
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return file.exists();
     }
 
     /**
@@ -55,6 +123,19 @@ public class SimpleFileRepository implements FileRepository {
      */
     @Override
     public String readFileFromResources(String fileName) {
-        return null;
+        Scanner in = null;
+        String s;
+        try {
+            in = new Scanner(new FileReader("src\\main\\resources\\" + fileName));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        StringBuilder sb = new StringBuilder();
+        while(Objects.requireNonNull(in).hasNext()) {
+            sb.append(in.next());
+        }
+        in.close();
+        return(sb.toString());
     }
+
 }
